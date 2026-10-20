@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JARVIS AI</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh;
+  background: #050b14; color: #b9f7ff;
+  font-family: Arial, sans-serif;
+  display: flex; align-items: center;
+  justify-content: center; padding: 20px;
+}
+.panel {
+  width: 100%; max-width: 430px; text-align: center;
+  border: 1px solid #087f9a; border-radius: 24px;
+  padding: 28px 20px;
+  background: radial-gradient(circle, #102b40, #050b14 70%);
+  box-shadow: 0 0 28px #007b9b55;
+}
+h1 { letter-spacing: 8px; }
+.orb {
+  width: 145px; height: 145px; border-radius: 50%;
+  margin: 28px auto; border: 3px solid #48eaff;
+  box-shadow: 0 0 25px #00cfff, inset 0 0 25px #00cfff;
+  display: grid; place-items: center; font-size: 48px;
+}
+button {
+  background: #073b50; color: #b9f7ff;
+  border: 1px solid #48eaff; border-radius: 14px;
+  padding: 15px; font-size: 17px; margin: 6px;
+}
+#status { min-height: 24px; color: #7eeeff; }
+#answer { color: white; line-height: 1.5; }
+small { color: #91b5c4; }
+</style>
+</head>
+<body>
+<main class="panel">
+  <small>ASISTENTE PERSONAL</small>
+  <h1>J.A.R.V.I.S.</h1>
+  <div class="orb">◉</div>
+  <p id="status">SISTEMA EN ESPERA</p>
+  <p id="answer">Hola. Pulsa el micrófono para hablar conmigo.</p>
+  <button id="mic">🎙️ HABLAR</button>
+  <button id="repeat">🔊 REPETIR</button>
+  <br>
+  <small>Prototipo de voz · Español</small>
+</main>
+<script>
+const status = document.getElementById("status");
+const answer = document.getElementById("answer");
+const mic = document.getElementById("mic");
+let lastText = "Hola. Pulsa el micrófono para hablar conmigo.";
+
+function speak(text) {
+  lastText = text;
+  answer.textContent = text;
+  if (!("speechSynthesis" in window)) {
+    status.textContent = "VOZ NO DISPONIBLE";
+    return;
+  }
+  speechSynthesis.cancel();
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "es-ES";
+  msg.rate = 1;
+  speechSynthesis.speak(msg);
+}
+
+const Recognition = window.SpeechRecognition ||
+                    window.webkitSpeechRecognition;
+
+if (Recognition) {
+  const recognition = new Recognition();
+  recognition.lang = "es-ES";
+  recognition.interimResults = false;
+
+  mic.addEventListener("click", () => {
+    try {
+      status.textContent = "ESCUCHANDO...";
+      recognition.start();
+    } catch (e) {
+      status.textContent = "ESPERA E INTENTA DE NUEVO";
+    }
+  });
+
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript;
+    status.textContent = "HAS DICHO:";
+    answer.textContent = text;
+    const cmd = text.toLowerCase();
+
+    if (cmd.includes("hola")) {
+      speak("Hola. Soy Jarvis, tu asistente personal. ¿En qué puedo ayudarte?");
+    } else if (cmd.includes("hora")) {
+      speak("La hora de tu dispositivo es " +
+        new Date().toLocaleTimeString("es-CO", {
+          hour: "2-digit", minute: "2-digit"
+        }));
+    } else if (cmd.includes("fecha")) {
+      speak("Hoy es " +
+        new Date().toLocaleDateString("es-CO", {
+          dateStyle: "full"
+        }));
+    } else if (cmd.includes("tu nombre")) {
+      speak("Me llamo Jarvis, tu asistente personal.");
+    } else if (cmd.includes("cómo estás") ||
+               cmd.includes("como estas")) {
+      speak("Todos los sistemas básicos están listos. ¿Qué hacemos?");
+    } else {
+      speak("He escuchado: " + text +
+        ". Todavía estoy aprendiendo. Mi conexión con una inteligencia artificial avanzada aún no está configurada.");
+    }
+  };
+
+  recognition.onerror = () => {
+    status.textContent = "NO PUDE ESCUCHARTE. REVISA EL MICRÓFONO.";
+  };
+  recognition.onend = () => {
+    if (status.textContent === "ESCUCHANDO...") {
+      status.textContent = "SISTEMA EN ESPERA";
+    }
+  };
+} else {
+  mic.addEventListener("click", () => {
+    speak("El reconocimiento de voz no está disponible en este navegador. Prueba con Chrome.");
+  });
+}
+
+document.getElementById("repeat").addEventListener("click", () => {
+  speak(lastText);
+});
+</script>
+</body>
+</html>
